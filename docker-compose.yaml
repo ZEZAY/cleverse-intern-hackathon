@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis
+    restart: unless-stopped
+    container_name: hackathon-redis
+    ports:
+      - ${REDIS_PORT}:6379
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:${REDIS_PORT}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    container_name: hackathon-api
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - ${API_PORT}:3000
+    depends_on:
+      - redis
+
+  poller:
+    build:
+      context: .
+      dockerfile: Dockerfile2
+    restart: on-failure
+    container_name: hackathon-poller
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - ${POLLER_PORT}:8000
+    depends_on:
+      - redis
