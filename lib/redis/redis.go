@@ -17,7 +17,7 @@ type RedisDB struct {
 }
 
 func NewRedisDB() (*RedisDB, error) {
-	err := godotenv.Load(".env")
+	err := godotenv.Load("deployments/.env")
 	if err != nil {
 		return nil, errors.Wrap(err, "Main load .env file")
 	}

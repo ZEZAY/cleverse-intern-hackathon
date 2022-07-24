@@ -2,12 +2,12 @@
 
 ## Quickstart
 
-1. create `.env` (from [temple](.env.sample))
+1. create `deployments/.env` (from [temple](deployments/.env.sample))
 
 2. run docker compose
 
    ```bash
-   docker compose up -d
+   cd deployments && docker compose up -d
    ```
 
 ## Services
