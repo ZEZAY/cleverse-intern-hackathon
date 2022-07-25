@@ -2,8 +2,9 @@ package datamodel
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
+
+	"hackathon/lib/utils"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -17,6 +18,7 @@ type Choice struct {
 }
 
 type Topic struct {
+	No             int            `json:"no"`
 	Address        common.Address `json:"address"`
 	Question       string         `json:"question"`
 	Description    string         `json:"description"`
@@ -51,12 +53,15 @@ func (t Topic) ToMassage() TopicMassage {
 	isActive := isVote || isBet
 
 	msg := TopicMassage{
+		No:             t.No,
 		Address:        t.Address,
 		Question:       t.Question,
 		Description:    t.Description,
 		Category:       t.Category,
-		TimeEndBet:     formatTime(t.TimeEndBet),
-		TimeEndVote:    formatTime(t.TimeEndVote),
+		TimeStartBet:   utils.TimeToString(t.TimeStartBet),
+		TimeStartVote:  utils.TimeToString(t.TimeStartVote),
+		TimeEndBet:     utils.TimeToString(t.TimeEndBet),
+		TimeEndVote:    utils.TimeToString(t.TimeEndVote),
 		TotalVoteCount: t.TotalVoteCount,
 		TotalBetCount:  t.TotalBetCount,
 		TotalBetValue:  t.TotalBetValue,
@@ -66,14 +71,4 @@ func (t Topic) ToMassage() TopicMassage {
 		IsActive:       isActive,
 	}
 	return msg
-}
-
-func formatTime(time time.Time) string {
-	timeStr := fmt.Sprintf("%s %d, %d, %s",
-		time.Month().String()[:3],
-		time.Day(),
-		time.Year(),
-		time.Format("15:04 PM"),
-	)
-	return timeStr
 }

@@ -21,6 +21,7 @@ func GetAddresses(client *ethclient.Client, callOpts *bind.CallOpts) ([]common.A
 	// 	return nil, errors.Wrap(err, "GetAddresses get addresses failed")
 	// }
 
+	// TODO: sort No. from 1 - n
 	addresses := []common.Address{
 		common.HexToAddress("0xc3a4EAaCB866146138B494368c6A60Cf41A95CB8"),
 		common.HexToAddress("0x9A04E4Cff8b5BaAbDA11d252FC342Df8B2872226"),

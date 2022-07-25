@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"hackathon/lib/datamodel"
+	"hackathon/lib/utils"
 
 	"github.com/go-redis/redis"
-	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 )
 
@@ -17,9 +17,9 @@ type RedisDB struct {
 }
 
 func NewRedisDB() (*RedisDB, error) {
-	err := godotenv.Load("deployments/.env")
+	err := utils.LoadEnv()
 	if err != nil {
-		return nil, errors.Wrap(err, "Main load .env file")
+		return nil, errors.Wrap(err, "NewRedisDB file")
 	}
 
 	client := redis.NewClient(&redis.Options{

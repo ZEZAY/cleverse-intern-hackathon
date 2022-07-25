@@ -69,7 +69,7 @@ func main() {
 		clientChal <- client2
 		clientChal <- client3
 
-		for _, topicAddress := range topicAddresses {
+		for i, topicAddress := range topicAddresses {
 			var client *ethclient.Client
 
 			select {
@@ -80,11 +80,11 @@ func main() {
 				break
 			case client = <-clientChal:
 				wg.Add(1)
-				go func(address common.Address) {
+				go func(address common.Address, topicNo int) {
 					fmt.Println("address ", address)
 					defer wg.Done()
 					retryErr := retry.Do(func() error {
-						topic, err := contract.GetTopic(client, callOpts, address, clientChal)
+						topic, err := contract.GetTopic(client, callOpts, address, topicNo, clientChal)
 						if err != nil {
 							panic(errors.Wrap(err, "Main GetTopic failed"))
 						}
@@ -104,7 +104,7 @@ func main() {
 							cancel()
 						})
 					}
-				}(topicAddress)
+				}(topicAddress, i+1)
 			}
 		}
 		wg.Wait()

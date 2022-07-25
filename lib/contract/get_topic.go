@@ -2,12 +2,10 @@ package contract
 
 import (
 	"fmt"
-	"math"
 	"math/big"
-	"strconv"
-	"time"
 
 	"hackathon/lib/datamodel"
+	"hackathon/lib/utils"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -20,25 +18,7 @@ var (
 	dummyCategory    = "Lorem"
 )
 
-func toTime(timestamp string) (t time.Time, err error) {
-	i, err := strconv.ParseInt(timestamp, 10, 64)
-	if err != nil {
-		err = errors.Wrap(err, "formatTime failed")
-		return
-	}
-	t = time.Unix(i, 0)
-	return
-}
-
-func toFloat64(amount *big.Int, decimals int) float64 {
-	decimalsFloat := big.NewFloat(math.Pow10(decimals))
-	amountFloat := big.NewFloat(0).SetInt(amount)
-	bigFloat := big.NewFloat(0).Quo(amountFloat, decimalsFloat)
-	float, _ := bigFloat.Float64()
-	return float
-}
-
-func GetTopic(client *ethclient.Client, callOpts *bind.CallOpts, address common.Address, clientChan chan *ethclient.Client) (*datamodel.Topic, error) {
+func GetTopic(client *ethclient.Client, callOpts *bind.CallOpts, address common.Address, no int, clientChan chan *ethclient.Client) (*datamodel.Topic, error) {
 	question, err := NewQuestionContract(address, client)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetTopic get question failed")
@@ -54,22 +34,22 @@ func GetTopic(client *ethclient.Client, callOpts *bind.CallOpts, address common.
 		return nil, errors.Wrap(err, "GetTopic get questionData failed")
 	}
 
-	timeStartVote, err := toTime(startVoteAt.String())
+	timeStartVote, err := utils.StringToTime(startVoteAt.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetTopic get timeStartVote failed")
 	}
 
-	timeStartBet, err := toTime(startBetAt.String())
+	timeStartBet, err := utils.StringToTime(startBetAt.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetTopic get timeStartBet failed")
 	}
 
-	timeEndVote, err := toTime(endVoteAt.String())
+	timeEndVote, err := utils.StringToTime(endVoteAt.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetTopic get timeEndVote failed")
 	}
 
-	timeEndBet, err := toTime(endBetAt.String())
+	timeEndBet, err := utils.StringToTime(endBetAt.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetTopic get timeEndBet failed")
 	}
@@ -99,12 +79,13 @@ func GetTopic(client *ethclient.Client, callOpts *bind.CallOpts, address common.
 			Choice:    name,
 			VoteCount: int(nVote.Int64()),
 			BetCount:  int(nBet.Int64()),
-			BetValue:  toFloat64(vBet, 18),
+			BetValue:  utils.BigIntToFloat64(vBet, 18),
 		}
 		choices = append(choices, choice)
 	}
 
 	topic := datamodel.Topic{
+		No:             no,
 		Address:        address,
 		Question:       questionName,
 		Description:    dummyDescription,
@@ -115,7 +96,7 @@ func GetTopic(client *ethclient.Client, callOpts *bind.CallOpts, address common.
 		TimeEndVote:    timeEndVote,
 		TotalVoteCount: int(totalVoteCount.Int64()),
 		TotalBetCount:  int(totalBetCount.Int64()),
-		TotalBetValue:  toFloat64(totalBetValue, 18),
+		TotalBetValue:  utils.BigIntToFloat64(totalBetValue, 18),
 		Choices:        choices,
 	}
 

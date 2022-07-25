@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"sort"
+	"strings"
 
 	"hackathon/lib/datamodel"
 	"hackathon/lib/redis"
@@ -37,6 +39,15 @@ func main() {
 		topicsMassage := []datamodel.TopicMassage{}
 		for _, t := range topics {
 			topicsMassage = append(topicsMassage, t.ToMassage())
+		}
+
+		switch sortBy := strings.ToLower(c.Query("sort")); sortBy {
+		case "vote":
+			sort.Sort(datamodel.TopicMsgByVote(topicsMassage))
+		case "prize":
+			sort.Sort(datamodel.TopicMsgByPrize(topicsMassage))
+		default:
+			sort.Sort(datamodel.TopicMsgByTitle(topicsMassage))
 		}
 
 		return c.Status(200).JSON(&fiber.Map{
