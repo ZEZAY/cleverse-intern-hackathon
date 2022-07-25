@@ -28,7 +28,16 @@ func main() {
 
 	// * get all topics
 	api.Get("/topics", func(c *fiber.Ctx) error {
-		topics, err := redisDB.GetAllTopics()
+		var topics []datamodel.Topic
+
+		switch key := strings.ToLower(c.Query("filter")); key {
+		case "poll":
+			topics, err = redisDB.GetTopics("vote")
+		case "question":
+			topics, err = redisDB.GetTopics("ask")
+		default:
+			topics, err = redisDB.GetTopics("*")
+		}
 		if err != nil {
 			return c.Status(404).JSON(fiber.Map{
 				"success": false,
@@ -42,10 +51,8 @@ func main() {
 		}
 
 		switch sortBy := strings.ToLower(c.Query("sort")); sortBy {
-		case "vote":
-			sort.Sort(datamodel.TopicMsgByVote(topicsMassage))
-		case "prize":
-			sort.Sort(datamodel.TopicMsgByPrize(topicsMassage))
+		case "count":
+			sort.Sort(datamodel.TopicMsgByResponseCount(topicsMassage))
 		default:
 			sort.Sort(datamodel.TopicMsgByTitle(topicsMassage))
 		}

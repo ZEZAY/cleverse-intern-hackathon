@@ -15,4 +15,6 @@
 1. Poller (read smart contract, update redis)
 2. API (go-fiber)
    - [GET] /api/topics
+     - sort: count
+     - filter: poll, question
    - [GET] /api/topic/:address

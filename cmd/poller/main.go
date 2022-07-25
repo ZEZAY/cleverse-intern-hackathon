@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"hackathon/lib/contract"
+	"hackathon/lib/datamodel"
 	"hackathon/lib/redis"
+	"hackathon/lib/utils"
 
 	"github.com/avast/retry-go"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -59,10 +61,15 @@ func main() {
 			Context:     ctx,
 		}
 
-		topicAddresses, err := contract.GetAddresses(client1, callOpts)
+		voteTopicAddresses, err := contract.GetVoteAddresses(client1, callOpts)
 		if err != nil {
-			panic(errors.Wrap(err, "Main GetAddresses failed"))
+			panic(errors.Wrap(err, "Main GetVoteAddresses failed"))
 		}
+		askTopicAddresses, err := contract.GetAskAddresses(client2, callOpts)
+		if err != nil {
+			panic(errors.Wrap(err, "Main GetAskAddresses failed"))
+		}
+		topicAddresses := append(voteTopicAddresses, askTopicAddresses...)
 
 		clientChal := make(chan *ethclient.Client, 3)
 		clientChal <- client1
@@ -84,16 +91,27 @@ func main() {
 					fmt.Println("address ", address)
 					defer wg.Done()
 					retryErr := retry.Do(func() error {
-						topic, err := contract.GetTopic(client, callOpts, address, topicNo, clientChal)
-						if err != nil {
-							panic(errors.Wrap(err, "Main GetTopic failed"))
+						var topic *datamodel.Topic
+						var key string
+						if utils.AddressesContains(voteTopicAddresses, address) {
+							topic, err = contract.GetVoteTopic(client, callOpts, address, topicNo, clientChal)
+							if err != nil {
+								return errors.Wrap(err, "Main GetVoteTopic failed")
+							}
+							key = "vote"
+						} else {
+							topic, err = contract.GetAskTopic(client, callOpts, address, topicNo, clientChal)
+							if err != nil {
+								return errors.Wrap(err, "Main GetAskTopic failed")
+							}
+							key = "ask"
 						}
 						m.Lock()
-						err = redisDB.SetTopic(*topic)
-						if err != nil {
-							panic(errors.Wrap(err, "Main SetTopic failed"))
-						}
+						err = redisDB.SetTopic(*topic, key)
 						m.Unlock()
+						if err != nil {
+							return errors.Wrap(err, "Main SetTopic failed")
+						}
 						return nil
 					}, retry.Attempts(100), retry.Delay(200*time.Millisecond),
 						retry.DelayType(retry.FixedDelay), retry.LastErrorOnly(true),

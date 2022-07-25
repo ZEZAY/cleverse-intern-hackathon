@@ -3,7 +3,6 @@ package redis
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"hackathon/lib/datamodel"
 	"hackathon/lib/utils"
@@ -39,46 +38,65 @@ func NewRedisDB() (*RedisDB, error) {
 	return &redisDB, nil
 }
 
-func (r RedisDB) SetTopic(topic datamodel.Topic) error {
+func (r RedisDB) SetTopic(topic datamodel.Topic, topicType string) error {
 	value, err := topic.Marshal()
 	if err != nil {
 		return errors.Wrap(err, "SetTopic marshal failed")
 	}
 
-	err = r.Client.Set(strings.ToLower(topic.Address.String()), value, 0).Err()
+	err = r.Client.Set(topic.GetKey(topicType), value, 0).Err()
 	if err != nil {
 		return errors.Wrap(err, "SetTopic set failed")
 	}
 	return nil
 }
 
-func (r RedisDB) GetTopic(topicAddress string) (*datamodel.Topic, error) {
-	result, err := r.Client.Get(topicAddress).Bytes()
+func (r RedisDB) getTopic(key string) (*datamodel.Topic, error) {
+	result, err := r.Client.Get(key).Bytes()
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get failed")
+		return nil, errors.Wrap(err, "getTopic get failed")
 	}
 
 	topic, err := new(datamodel.Topic).Unmarshal(result)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic unmarshal failed")
+		return nil, errors.Wrap(err, "getTopic unmarshal failed")
 	}
 	return topic, nil
 }
 
-func (r RedisDB) GetAllTopics() ([]datamodel.Topic, error) {
+func (r RedisDB) GetTopic(topicAddress string) (*datamodel.Topic, error) {
 	var topics []datamodel.Topic
-	iter := r.Client.Scan(0, "*", 0).Iterator()
+	iter := r.Client.Scan(0, "*-"+topicAddress, 0).Iterator()
 
 	for iter.Next() {
-		topic, err := r.GetTopic(iter.Val())
+		topic, err := r.getTopic(iter.Val())
 		if err != nil {
-			return nil, errors.Wrap(err, "GetAllTopics loop failed")
+			return nil, errors.Wrap(err, "GetTopic loop failed")
 		}
 		topics = append(topics, *topic)
 	}
 
 	if err := iter.Err(); err != nil {
-		return nil, errors.Wrap(err, "GetAllTopics read iter failed")
+		return nil, errors.Wrap(err, "GetTopic read iter failed")
+	}
+
+	return &topics[0], nil
+}
+
+func (r RedisDB) GetTopics(topicType string) ([]datamodel.Topic, error) {
+	var topics []datamodel.Topic
+	iter := r.Client.Scan(0, topicType+"-*", 0).Iterator()
+
+	for iter.Next() {
+		topic, err := r.getTopic(iter.Val())
+		if err != nil {
+			return nil, errors.Wrap(err, "GetTopics loop failed")
+		}
+		topics = append(topics, *topic)
+	}
+
+	if err := iter.Err(); err != nil {
+		return nil, errors.Wrap(err, "GetTopics read iter failed")
 	}
 
 	return topics, nil

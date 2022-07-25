@@ -1,9 +1,10 @@
 package contract
 
 import (
-	"fmt"
 	"math/big"
+	"time"
 
+	"hackathon/lib/contract/contract"
 	"hackathon/lib/datamodel"
 	"hackathon/lib/utils"
 
@@ -15,89 +16,126 @@ import (
 
 var (
 	dummyDescription = "What is Lorem Ipsum? Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
-	dummyCategory    = "Lorem"
 )
 
-func GetTopic(client *ethclient.Client, callOpts *bind.CallOpts, address common.Address, no int, clientChan chan *ethclient.Client) (*datamodel.Topic, error) {
-	question, err := NewQuestionContract(address, client)
+func getTopicData(question contract.Question, callOpts *bind.CallOpts) (
+	questionName string,
+	timeStart, timeEnd time.Time,
+	err error,
+) {
+	questionName, err = question.QuestionName(callOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get question failed")
+		err = errors.Wrap(err, "getTopicData get questionName failed")
+		return
 	}
 
-	questionName, err := question.Name(callOpts)
+	startVoteAt, endVoteAt, err := question.GetTimeStampData(callOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get questionName failed")
+		err = errors.Wrap(err, "getTopicData get questionData failed")
+		return
 	}
 
-	totalVoteCount, totalBetCount, totalBetValue, startBetAt, endBetAt, startVoteAt, endVoteAt, err := question.GetQuestionData(callOpts)
+	timeStart, err = utils.StringToTime(startVoteAt.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get questionData failed")
+		err = errors.Wrap(err, "getTopicData get timeStart failed")
+		return
 	}
 
-	timeStartVote, err := utils.StringToTime(startVoteAt.String())
+	timeEnd, err = utils.StringToTime(endVoteAt.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get timeStartVote failed")
+		err = errors.Wrap(err, "getTopicData get timeEnd failed")
+		return
+	}
+	return
+}
+
+func GetVoteTopic(client *ethclient.Client, callOpts *bind.CallOpts, address common.Address, no int, clientChan chan *ethclient.Client) (*datamodel.Topic, error) {
+	question, err := contract.NewVoteQuestion(address, client)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetVoteTopic get question failed")
 	}
 
-	timeStartBet, err := utils.StringToTime(startBetAt.String())
+	questionName, timeStart, timeEnd, err := getTopicData(question, callOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get timeStartBet failed")
+		return nil, errors.Wrap(err, "GetVoteTopic get getTopicData failed")
 	}
 
-	timeEndVote, err := utils.StringToTime(endVoteAt.String())
+	choicesName, err := question.GetAllChoices(callOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get timeEndVote failed")
+		return nil, errors.Wrap(err, "GetVoteTopic get choicesName failed")
 	}
 
-	timeEndBet, err := utils.StringToTime(endBetAt.String())
-	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get timeEndBet failed")
+	type choice struct {
+		Index  int    `json:"index"`
+		Choice string `json:"choice"`
+		Vote   int    `json:"vote"`
 	}
 
-	choicesName, _, err := question.GetAllChoices(callOpts)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetTopic get choicesName failed")
-	}
+	responses := []interface{}{}
+	totalVoteCount := 0
 
-	choices := []datamodel.Choice{}
-	for i, name := range choicesName {
-
-		nVote, err := question.GetChoiceVoteData(callOpts, name)
+	for i := 0; i < len(choicesName); i++ {
+		nVote, name, err := question.GetChoiceData(callOpts, big.NewInt(int64(i)))
 		if err != nil {
-			return nil, errors.Wrap(err, "GetTopic get nVote failed")
+			return nil, errors.Wrap(err, "GetVoteTopic get nVote failed")
 		}
 
-		nBet, vBet, err := question.GetChoiceBetData(callOpts, name)
-		if err != nil {
-			// return nil, errors.Wrap(err, "GetTopic get nBet, vBet failed")
-			fmt.Println(err, "GetTopic get nBet, vBet failed")
-			nBet, vBet = big.NewInt(0), big.NewInt(0)
+		totalVoteCount += int(nVote.Int64())
+		choice := choice{
+			Index:  i,
+			Choice: name,
+			Vote:   int(nVote.Int64()),
 		}
-
-		choice := datamodel.Choice{
-			Index:     i,
-			Choice:    name,
-			VoteCount: int(nVote.Int64()),
-			BetCount:  int(nBet.Int64()),
-			BetValue:  utils.BigIntToFloat64(vBet, 18),
-		}
-		choices = append(choices, choice)
+		responses = append(responses, choice)
 	}
 
 	topic := datamodel.Topic{
-		No:             no,
-		Address:        address,
-		Question:       questionName,
-		Description:    dummyDescription,
-		Category:       dummyCategory,
-		TimeStartBet:   timeStartBet,
-		TimeStartVote:  timeStartVote,
-		TimeEndBet:     timeEndBet,
-		TimeEndVote:    timeEndVote,
-		TotalVoteCount: int(totalVoteCount.Int64()),
-		TotalBetCount:  int(totalBetCount.Int64()),
-		TotalBetValue:  utils.BigIntToFloat64(totalBetValue, 18),
-		Choices:        choices,
+		No:            no,
+		Address:       address,
+		Question:      questionName,
+		Description:   dummyDescription,
+		Category:      "vote",
+		TimeStart:     timeStart,
+		TimeEnd:       timeEnd,
+		ResponseCount: totalVoteCount,
+		Responses:     responses,
+	}
+
+	clientChan <- client
+	return &topic, nil
+}
+
+func GetAskTopic(client *ethclient.Client, callOpts *bind.CallOpts, address common.Address, no int, clientChan chan *ethclient.Client) (*datamodel.Topic, error) {
+	question, err := contract.NewAskQuestion(address, client)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetAskTopic get question failed")
+	}
+
+	questionName, timeStart, timeEnd, err := getTopicData(question, callOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetAskTopic get getTopicData failed")
+	}
+
+	answers, err := question.GetAllAnswer(callOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetAskTopic get choicesName failed")
+	}
+
+	responses := []interface{}{}
+	for _, answer := range answers {
+		responses = append(responses, answer)
+	}
+
+	topic := datamodel.Topic{
+		No:            no,
+		Address:       address,
+		Question:      questionName,
+		Description:   dummyDescription,
+		Category:      "ask",
+		TimeStart:     timeStart,
+		TimeEnd:       timeEnd,
+		ResponseCount: len(responses),
+		Responses:     responses,
 	}
 
 	clientChan <- client
