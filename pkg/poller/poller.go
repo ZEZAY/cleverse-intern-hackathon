@@ -1,4 +1,4 @@
-package main
+package poller
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"hackathon/lib/contract"
+	"hackathon/lib/database"
 	"hackathon/lib/datamodel"
-	"hackathon/lib/redis"
 	"hackathon/lib/utils"
 
 	"github.com/avast/retry-go"
@@ -19,8 +19,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func main() {
-	redisDB, err := redis.NewRedisDB()
+func RunLoop() {
+	redisDB, err := database.NewRedisDB()
 	if err != nil {
 		panic(errors.Wrap(err, "Main NewRedisDB failed"))
 	}
