@@ -18,7 +18,7 @@ type RedisDB struct {
 func NewRedisDB() (*RedisDB, error) {
 	err := utils.LoadEnv()
 	if err != nil {
-		return nil, errors.Wrap(err, "NewRedisDB file")
+		return nil, errors.Wrap(err, "NewRedisDB failed")
 	}
 
 	client := redis.NewClient(&redis.Options{

@@ -18,32 +18,32 @@ var (
 	dummyDescription = "What is Lorem Ipsum? Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
 )
 
-func getTopicData(question contract.Question, callOpts *bind.CallOpts) (
+func getQuestionData(question contract.Question, callOpts *bind.CallOpts) (
 	questionName string,
 	timeStart, timeEnd time.Time,
 	err error,
 ) {
 	questionName, err = question.QuestionName(callOpts)
 	if err != nil {
-		err = errors.Wrap(err, "getTopicData get questionName failed")
+		err = errors.Wrap(err, "getQuestionData get questionName failed")
 		return
 	}
 
 	startVoteAt, endVoteAt, err := question.GetTimeStampData(callOpts)
 	if err != nil {
-		err = errors.Wrap(err, "getTopicData get questionData failed")
+		err = errors.Wrap(err, "getQuestionData get questionData failed")
 		return
 	}
 
 	timeStart, err = utils.StringToTime(startVoteAt.String())
 	if err != nil {
-		err = errors.Wrap(err, "getTopicData get timeStart failed")
+		err = errors.Wrap(err, "getQuestionData get timeStart failed")
 		return
 	}
 
 	timeEnd, err = utils.StringToTime(endVoteAt.String())
 	if err != nil {
-		err = errors.Wrap(err, "getTopicData get timeEnd failed")
+		err = errors.Wrap(err, "getQuestionData get timeEnd failed")
 		return
 	}
 	return
@@ -55,9 +55,9 @@ func GetVoteTopic(client *ethclient.Client, callOpts *bind.CallOpts, address com
 		return nil, errors.Wrap(err, "GetVoteTopic get question failed")
 	}
 
-	questionName, timeStart, timeEnd, err := getTopicData(question, callOpts)
+	questionName, timeStart, timeEnd, err := getQuestionData(question, callOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetVoteTopic get getTopicData failed")
+		return nil, errors.Wrap(err, "GetVoteTopic get getQuestionData failed")
 	}
 
 	choicesName, err := question.GetAllChoices(callOpts)
@@ -94,7 +94,7 @@ func GetVoteTopic(client *ethclient.Client, callOpts *bind.CallOpts, address com
 		Address:       address,
 		Question:      questionName,
 		Description:   dummyDescription,
-		Category:      "vote",
+		Category:      "poll",
 		TimeStart:     timeStart,
 		TimeEnd:       timeEnd,
 		ResponseCount: totalVoteCount,
@@ -111,9 +111,9 @@ func GetAskTopic(client *ethclient.Client, callOpts *bind.CallOpts, address comm
 		return nil, errors.Wrap(err, "GetAskTopic get question failed")
 	}
 
-	questionName, timeStart, timeEnd, err := getTopicData(question, callOpts)
+	questionName, timeStart, timeEnd, err := getQuestionData(question, callOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetAskTopic get getTopicData failed")
+		return nil, errors.Wrap(err, "GetAskTopic get getQuestionData failed")
 	}
 
 	answers, err := question.GetAllAnswer(callOpts)
@@ -131,7 +131,7 @@ func GetAskTopic(client *ethclient.Client, callOpts *bind.CallOpts, address comm
 		Address:       address,
 		Question:      questionName,
 		Description:   dummyDescription,
-		Category:      "ask",
+		Category:      "question",
 		TimeStart:     timeStart,
 		TimeEnd:       timeEnd,
 		ResponseCount: len(responses),
