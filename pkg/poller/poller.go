@@ -34,7 +34,7 @@ func RunLoop() {
 	m := sync.RWMutex{}
 
 	for {
-		time.Sleep(time.Millisecond * 2000)
+		time.Sleep(time.Millisecond * 1000)
 		// now := time.Now().Format("Jul 26, 2022, 12:00 PM")
 		// fmt.Println(now)
 
