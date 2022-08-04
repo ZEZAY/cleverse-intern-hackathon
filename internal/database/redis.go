@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"hackathon/lib/datamodel"
-	"hackathon/lib/utils"
+	"hackathon/internal/datamodel"
+	"hackathon/internal/utils"
 
 	"github.com/go-redis/redis"
 	"github.com/pkg/errors"

@@ -2,9 +2,10 @@ package datamodel
 
 import (
 	"encoding/json"
-	"hackathon/lib/utils"
 	"strings"
 	"time"
+
+	"hackathon/internal/utils"
 
 	"github.com/ethereum/go-ethereum/common"
 )

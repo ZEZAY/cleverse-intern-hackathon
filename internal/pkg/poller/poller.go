@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"hackathon/lib/contract"
-	"hackathon/lib/database"
-	"hackathon/lib/datamodel"
-	"hackathon/lib/utils"
+	"hackathon/internal/contract"
+	"hackathon/internal/database"
+	"hackathon/internal/datamodel"
+	"hackathon/internal/utils"
 
 	"github.com/avast/retry-go"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

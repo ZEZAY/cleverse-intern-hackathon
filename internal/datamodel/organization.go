@@ -2,7 +2,6 @@ package datamodel
 
 import (
 	"strings"
-
 	"gorm.io/gorm"
 )
 

@@ -8,8 +8,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"hackathon/lib/datamodel"
-	"hackathon/lib/utils"
+	"hackathon/internal/datamodel"
+	"hackathon/internal/utils"
 )
 
 type PostgresDB struct {

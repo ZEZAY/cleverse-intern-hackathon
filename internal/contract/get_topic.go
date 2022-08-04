@@ -4,9 +4,9 @@ import (
 	"math/big"
 	"time"
 
-	"hackathon/lib/contract/contract"
-	"hackathon/lib/datamodel"
-	"hackathon/lib/utils"
+	"hackathon/internal/contract/contract"
+	"hackathon/internal/datamodel"
+	"hackathon/internal/utils"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"

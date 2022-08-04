@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"hackathon/lib/database"
-	"hackathon/lib/datamodel"
-	"hackathon/pkg/poller"
+	"hackathon/internal/database"
+	"hackathon/internal/datamodel"
+	"hackathon/internal/pkg/poller"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
